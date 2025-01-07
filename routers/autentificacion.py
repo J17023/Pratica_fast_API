@@ -11,10 +11,10 @@ oauth= OAuth2PasswordBearer(tokenUrl="login")
 
 # Modelos de usuario
 class User(BaseModel):
-    id: int
+    id: str
     username : str
     email: str
-    disabled: False
+    disabled: bool = False
 
 class User_db(User):
     password:str
@@ -25,7 +25,7 @@ Users_DataBase ={
         "id" : "1",
         "username": "J1723",
         "email":"google@gmail.com",
-        "disable": False,
+        "disabled": False,
         "password" : "1234567"
     },
 
@@ -33,7 +33,7 @@ Users_DataBase ={
         "id" : "2",
         "username": "drepredador",
         "email":"microsoft@gmail.com",
-        "disable": False,
+        "disabled": False,
         "password" : "7654321"  
     }
 }
@@ -41,7 +41,7 @@ Users_DataBase ={
 # Función para buscar un usuario en la base de datos
 def search_user(username: str):
     if username in Users_DataBase:
-        return User(Users_DataBase[username])
+        return User(**Users_DataBase[username])
 
 # Endpoint de inicio de sesión
 @app.post("/login/")
@@ -53,7 +53,7 @@ async def login(form: Annotated[OAuth2PasswordRequestForm,Depends()]):
     user = User_db(**user_dict)
     password_entered = form.password
 
-    if password_entered == user.password:
+    if password_entered != user.password:
         raise HTTPException(status_code=404, detail = "no coincide el usuario o la contraseña")
 
     return {"access-token": user.username, "token-type":"bearer"}
@@ -70,6 +70,6 @@ async def current_user(token : Annotated[str,Depends(oauth)]):
 # Endpoint para obtener información del usuario actual
 @app.get("/user/me")
 async def get_user(user: Annotated[User,Depends(current_user)]):
-    return User
+    return user
 
 
