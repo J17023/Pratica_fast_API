@@ -1,11 +1,11 @@
 from datetime import timedelta,datetime, timezone
 from typing import Annotated
 
-
+import jwt
 from fastapi import FastAPI, Depends, status,HTTPException
 from pydantic import BaseModel
-from fastapi.security import OAuth2PasswordRequestForm, OAuth2AuthorizationCodeBearer
-import jwt
+from fastapi.security import OAuth2PasswordRequestForm, OAuth2PasswordBearer
+from jwt.exceptions import InvalidTokenError
 from passlib.context import CryptContext
 
 # Cantidad de minutos en los que expira el token 
@@ -22,11 +22,15 @@ app = FastAPI()
 #Gestion del algoritmo de encriptacion
 pwd_context = CryptContext(schemes=["bcrypt"], deprecated = "auto")
 
+#Token
+
+oauth = OAuth2PasswordBearer(tokenUrl="login")
+
 class Token(BaseModel): 
     access_token:str
     token_type:str
 
-class Data_token(Token):
+class Data_token(BaseModel):
     username:str
 
 class User(BaseModel):
@@ -80,9 +84,27 @@ def encryptated_token(data:dict, time_expired:timedelta | None=None):
     encoded_jwt = jwt.encode(to_encode,SECRET_KEY,ALGORITHM)
     return encoded_jwt
 
+def decrypted_token(token : Annotated[str,Depends(oauth)]):
+    CredentialException = HTTPException(status_code= status.HTTP_401_UNAUTHORIZED,
+                                        detail= "El usuario no existe")
+    try:
+        decrypted_access_token:dict = jwt.decode(token, SECRET_KEY,ALGORITHM)
+        username:str = decrypted_access_token.get("sub")
+        if username is None:
+            raise CredentialException
+        token_data = Data_token(username= username)
+    except InvalidTokenError:
+        raise CredentialException
+    
+    user = get_user(fake_database,username = token_data.username)
+    if user is None:
+        raise CredentialException
+    return user
+
+
 
 @app.post("/login/")
-async def busqueda_usuarios(form: Annotated[OAuth2PasswordRequestForm, Depends()]):
+async def ingreso_usuario_contraseña(form: Annotated[OAuth2PasswordRequestForm, Depends()]):
     
     user = authenticate_user(fake_database,form.username,form.password)
 
@@ -92,8 +114,11 @@ async def busqueda_usuarios(form: Annotated[OAuth2PasswordRequestForm, Depends()
 
     access_token_time = timedelta(minutes= ACCESS_TOKEN_TIME)
 
-    token = encryptated_token({"sup": user.username}, access_token_time)
+    token = encryptated_token({"sub": user.username}, access_token_time)
 
     return Token(access_token= token, token_type= "Bearer")
 
 
+@app.get("/user")
+async def current_user(user: Annotated[User,Depends(decrypted_token)]):
+    return user 
