@@ -14,28 +14,28 @@ async def ingresar_usuario(user: User):
     if "_id" in user_dict:
         del user_dict["_id"]
     
-    user_id = database.local.users.insert_one(user_dict).inserted_id
+    user_id = database.users.insert_one(user_dict).inserted_id
 
-    new_user = User_schema(database.local.users.find_one({"_id": user_id}))
+    new_user = User_schema(database.users.find_one({"_id": user_id}))
 
     return User(**new_user)
 
 @app.get("/user/me/{id}", response_model= User, status_code= status.HTTP_200_OK)
 async def buscar_usuario(id:str):
 
-    user = User_schema(database.local.users.find_one({"_id":ObjectId(id)}))
+    user = User_schema(database.users.find_one({"_id":ObjectId(id)}))
     return User(**user)
 
 @app.get("/users",response_model= list[User], status_code= status.HTTP_200_OK)
 async def get_users():
-    users = Users_list(database.local.users.find())
+    users = Users_list(database.users.find())
 
     return users
 
 @app.delete("/user/delete/{id}",status_code=status.HTTP_204_NO_CONTENT)
 async def delete_user(id:str):
 
-    found = database.local.users.find_one_and_delete({"_id": ObjectId(id)})
+    found = database.users.find_one_and_delete({"_id": ObjectId(id)})
     if not found:
         HTTPException(status_code=status.HTTP_404_NOT_FOUND, 
                          detail="no se encontro el usuario")
@@ -49,7 +49,7 @@ async def update_user(id:str, new_user : User):
         del new_user_dictionary["_id"]
 
     try:
-        user_dict= User_schema(database.local.users.
+        user_dict= User_schema(database.users.
                                find_one_and_update({"_id":ObjectId(id)},
                                                 {"$set":new_user_dictionary}))
     except Exception as e:
