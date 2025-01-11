@@ -1,7 +1,7 @@
 from fastapi import FastAPI, APIRouter, HTTPException
 from pydantic import BaseModel
 
-router = APIRouter(prefix="/product")
+router = APIRouter(prefix="/product", tags= ["products"])
 
 class product(BaseModel):
     id: int

@@ -4,7 +4,7 @@ from fastapi.security import OAuth2PasswordBearer,OAuth2PasswordRequestForm
 from typing import  Annotated
 
 # Crear instancia de FastAPI
-app = FastAPI()
+router = APIRouter(prefix="/AuthentificationBearer", tags=["AuthentificationBearer"])
 
 # Configuración de autenticación OAuth2
 oauth= OAuth2PasswordBearer(tokenUrl="login")
@@ -44,7 +44,7 @@ def search_user(username: str):
         return User(**Users_DataBase[username])
 
 # Endpoint de inicio de sesión
-@app.post("/login/")
+@router.post("/login/")
 async def login(form: Annotated[OAuth2PasswordRequestForm,Depends()]):
     user_dict = Users_DataBase.get(form.username)
     if not user_dict:
@@ -68,7 +68,7 @@ async def current_user(token : Annotated[str,Depends(oauth)]):
     return user
 
 # Endpoint para obtener información del usuario actual
-@app.get("/user/me")
+@router.get("/user/me")
 async def get_user(user: Annotated[User,Depends(current_user)]):
     return user
 

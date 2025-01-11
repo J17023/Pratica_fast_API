@@ -5,9 +5,9 @@ from dbs.schemas.user_schema import User_schema, Users_list
 from bson.objectid import ObjectId
 #router = APIRouter(prefix="/mongo", tags="Mongo")
 
-app = FastAPI()
+router = APIRouter(prefix= "/mongo", tags= ["mongo"])
 
-@app.post("/mongo",response_model=User,status_code= status.HTTP_201_CREATED)
+@router.post("/",response_model=User,status_code= status.HTTP_201_CREATED)
 async def ingresar_usuario(user: User):
 
     user_dict = dict(user)
@@ -20,19 +20,19 @@ async def ingresar_usuario(user: User):
 
     return User(**new_user)
 
-@app.get("/user/me/{id}", response_model= User, status_code= status.HTTP_200_OK)
+@router.get("/user/me/{id}", response_model= User, status_code= status.HTTP_200_OK)
 async def buscar_usuario(id:str):
 
     user = User_schema(database.users.find_one({"_id":ObjectId(id)}))
     return User(**user)
 
-@app.get("/users",response_model= list[User], status_code= status.HTTP_200_OK)
+@router.get("/users",response_model= list[User], status_code= status.HTTP_200_OK)
 async def get_users():
     users = Users_list(database.users.find())
 
     return users
 
-@app.delete("/user/delete/{id}",status_code=status.HTTP_204_NO_CONTENT)
+@router.delete("/user/delete/{id}",status_code=status.HTTP_204_NO_CONTENT)
 async def delete_user(id:str):
 
     found = database.users.find_one_and_delete({"_id": ObjectId(id)})
@@ -40,7 +40,7 @@ async def delete_user(id:str):
         HTTPException(status_code=status.HTTP_404_NOT_FOUND, 
                          detail="no se encontro el usuario")
         
-@app.put("/user/update/{id}", response_model=User, status_code=status.HTTP_202_ACCEPTED)
+@router.put("/user/update/{id}", response_model=User, status_code=status.HTTP_202_ACCEPTED)
 async def update_user(id:str, new_user : User):
   
 

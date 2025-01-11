@@ -2,7 +2,7 @@ from datetime import timedelta,datetime, timezone
 from typing import Annotated
 
 import jwt
-from fastapi import FastAPI, Depends, status,HTTPException
+from fastapi import FastAPI, Depends, status,HTTPException, APIRouter
 from pydantic import BaseModel
 from fastapi.security import OAuth2PasswordRequestForm, OAuth2PasswordBearer
 from jwt.exceptions import InvalidTokenError
@@ -17,7 +17,7 @@ ALGORITHM = "HS256"
 SECRET_KEY= "09d25e094faa6ca2556c818166b7a9563b93f7099f6f0f4caa6cf63b88e8d3e7"
 
 #iniciacion de fasAPI
-app = FastAPI()
+router = APIRouter(prefix="/authentificationJWT", tags=["authentificationJWT"])
 
 #Gestion del algoritmo de encriptacion
 pwd_context = CryptContext(schemes=["bcrypt"], deprecated = "auto")
@@ -103,7 +103,7 @@ def decrypted_token(token : Annotated[str,Depends(oauth)]):
 
 
 
-@app.post("/login/")
+@router.post("/login/")
 async def ingreso_usuario_contraseña(form: Annotated[OAuth2PasswordRequestForm, Depends()]):
     
     user = authenticate_user(fake_database,form.username,form.password)
@@ -119,6 +119,6 @@ async def ingreso_usuario_contraseña(form: Annotated[OAuth2PasswordRequestForm,
     return Token(access_token= token, token_type= "Bearer")
 
 
-@app.get("/user")
+@router.get("/user")
 async def current_user(user: Annotated[User,Depends(decrypted_token)]):
     return user 
